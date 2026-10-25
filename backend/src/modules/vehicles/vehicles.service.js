@@ -1,7 +1,7 @@
 import prisma from '../../config/database.js'
 
 // Prisma returns price as a Decimal object; send it to the client as a plain number
-function formatVehicle(vehicle) {
+export function formatVehicle(vehicle) {
     return {
         ...vehicle,
         price: Number(vehicle.price),
