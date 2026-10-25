@@ -64,3 +64,67 @@ describe('GET /api/vehicles', () => {
         expect(res.status).toBe(401)
     })
 })
+
+describe('GET /api/vehicles/search', () => {
+    beforeEach(async () => {
+        await prisma.vehicle.createMany({
+            data: [
+                corolla,
+                { make: 'Toyota', model: 'RAV4', category: 'SUV', price: 30000, quantity: 2 },
+                { make: 'Honda', model: 'Civic', category: 'Sedan', price: 22000, quantity: 1 },
+                { make: 'Ford', model: 'F-150', category: 'Truck', price: 45000, quantity: 4 },
+            ],
+        })
+    })
+
+    async function search(query) {
+        return request(app)
+            .get('/api/vehicles/search')
+            .query(query)
+            .set('Authorization', `Bearer ${userToken}`)
+    }
+
+    function models(res) {
+        return res.body.map((v) => v.model).sort()
+    }
+
+    it('filters by make, ignoring case and matching partial text', async () => {
+        const res = await search({ make: 'toy' })
+
+        expect(res.status).toBe(200)
+        expect(models(res)).toEqual(['Corolla', 'RAV4'])
+    })
+
+    it('filters by model', async () => {
+        expect(models(await search({ model: 'civic' }))).toEqual(['Civic'])
+    })
+
+    it('filters by category', async () => {
+        expect(models(await search({ category: 'sedan' }))).toEqual(['Civic', 'Corolla'])
+    })
+
+    it('filters by price range', async () => {
+        expect(models(await search({ minPrice: '21000', maxPrice: '35000' }))).toEqual(['Civic', 'RAV4'])
+    })
+
+    it('combines filters', async () => {
+        expect(models(await search({ make: 'toyota', maxPrice: '25000' }))).toEqual(['Corolla'])
+    })
+
+    it('returns every vehicle when no filters are given', async () => {
+        expect(await search({})).toHaveProperty('body.length', 4)
+    })
+
+    it('returns 400 for an invalid price range', async () => {
+        const res = await search({ minPrice: '50000', maxPrice: '100' })
+
+        expect(res.status).toBe(400)
+        expect(res.body.errors.minPrice).toBe('Min price cannot be greater than max price')
+    })
+
+    it('returns 401 without a token', async () => {
+        const res = await request(app).get('/api/vehicles/search')
+
+        expect(res.status).toBe(401)
+    })
+})

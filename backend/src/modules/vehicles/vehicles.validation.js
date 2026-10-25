@@ -69,3 +69,31 @@ export function validateVehicleInput(data) {
     errors,
   }
 }
+
+// Query string values arrive as text, e.g. "15000"
+function isNonNegativeNumber(value) {
+  return value.trim() !== '' && !Number.isNaN(Number(value)) && Number(value) >= 0
+}
+
+export function validateSearchQuery(query) {
+  const errors = {}
+  const { minPrice, maxPrice } = query || {}
+
+  if (minPrice !== undefined && !isNonNegativeNumber(minPrice)) {
+    errors.minPrice = 'Min price must be a non-negative number'
+  }
+
+  if (maxPrice !== undefined && !isNonNegativeNumber(maxPrice)) {
+    errors.maxPrice = 'Max price must be a non-negative number'
+  }
+
+  if (!errors.minPrice && !errors.maxPrice && minPrice !== undefined && maxPrice !== undefined
+    && Number(minPrice) > Number(maxPrice)) {
+    errors.minPrice = 'Min price cannot be greater than max price'
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  }
+}
