@@ -35,3 +35,20 @@ export function validateRegisterInput(data) {
     errors,
   }
 }
+
+export function validateLoginInput(data) {
+  const errors = {}
+
+  if (!data?.email || typeof data.email !== 'string' || !data.email.trim()) {
+    errors.email = 'Email is required'
+  }
+
+  if (!data?.password) {
+    errors.password = 'Password is required'
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  }
+}
