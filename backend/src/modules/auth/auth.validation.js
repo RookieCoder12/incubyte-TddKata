@@ -1,7 +1,11 @@
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+function isBlank(value) {
+  return typeof value !== 'string' || !value.trim()
+}
+
 function validateEmail(email) {
-  if (!email || typeof email !== 'string' || !email.trim()) {
+  if (isBlank(email)) {
     return 'Email is required'
   }
 
@@ -15,7 +19,7 @@ function validateEmail(email) {
 export function validateRegisterInput(data) {
   const errors = {}
 
-  if (!data?.name || typeof data.name !== 'string' || !data.name.trim()) {
+  if (isBlank(data?.name)) {
     errors.name = 'Name is required'
   }
 
@@ -39,7 +43,7 @@ export function validateRegisterInput(data) {
 export function validateLoginInput(data) {
   const errors = {}
 
-  if (!data?.email || typeof data.email !== 'string' || !data.email.trim()) {
+  if (isBlank(data?.email)) {
     errors.email = 'Email is required'
   }
 
