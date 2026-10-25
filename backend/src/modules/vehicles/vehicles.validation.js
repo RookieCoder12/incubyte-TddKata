@@ -1,5 +1,3 @@
-const TEXT_FIELDS = { make: 'Make', model: 'Model', category: 'Category' }
-
 function validateText(value, label) {
   if (typeof value !== 'string' || !value.trim()) {
     return `${label} is required`
@@ -44,24 +42,45 @@ function validateQuantity(quantity) {
   return null
 }
 
+// One validator per updatable field
+const FIELD_VALIDATORS = {
+  make: (value) => validateText(value, 'Make'),
+  model: (value) => validateText(value, 'Model'),
+  category: (value) => validateText(value, 'Category'),
+  price: validatePrice,
+  quantity: validateQuantity,
+}
+
 export function validateVehicleInput(data) {
   const errors = {}
 
-  for (const [field, label] of Object.entries(TEXT_FIELDS)) {
-    const textError = validateText(data?.[field], label)
-    if (textError) {
-      errors[field] = textError
+  for (const [field, validate] of Object.entries(FIELD_VALIDATORS)) {
+    const fieldError = validate(data?.[field])
+    if (fieldError) {
+      errors[field] = fieldError
     }
   }
 
-  const priceError = validatePrice(data?.price)
-  if (priceError) {
-    errors.price = priceError
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  }
+}
+
+// Partial update: only the fields that were sent are checked
+export function validateVehicleUpdateInput(data) {
+  const errors = {}
+  const fieldsToUpdate = Object.keys(FIELD_VALIDATORS).filter((field) => data?.[field] !== undefined)
+
+  if (fieldsToUpdate.length === 0) {
+    errors.body = 'Provide at least one field to update'
   }
 
-  const quantityError = validateQuantity(data?.quantity)
-  if (quantityError) {
-    errors.quantity = quantityError
+  for (const field of fieldsToUpdate) {
+    const fieldError = FIELD_VALIDATORS[field](data[field])
+    if (fieldError) {
+      errors[field] = fieldError
+    }
   }
 
   return {

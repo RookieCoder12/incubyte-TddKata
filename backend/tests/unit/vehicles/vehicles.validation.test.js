@@ -1,4 +1,4 @@
-import { validateVehicleInput, validateSearchQuery } from '../../../src/modules/vehicles/vehicles.validation.js'
+import { validateVehicleInput, validateSearchQuery, validateVehicleUpdateInput } from '../../../src/modules/vehicles/vehicles.validation.js'
 
 describe('validateVehicleInput', () => {
     const validVehicle = { make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 20000, quantity: 3 }
@@ -61,5 +61,28 @@ describe('validateSearchQuery', () => {
         const { errors } = validateSearchQuery({ minPrice: '5000', maxPrice: '1000' })
 
         expect(errors.minPrice).toBe('Min price cannot be greater than max price')
+    })
+})
+
+describe('validateVehicleUpdateInput', () => {
+    it('accepts a partial update', () => {
+        expect(validateVehicleUpdateInput({ price: 18000 })).toEqual({ isValid: true, errors: {} })
+    })
+
+    it('validates only the fields that are sent', () => {
+        const { isValid, errors } = validateVehicleUpdateInput({ make: '', quantity: -2 })
+
+        expect(isValid).toBe(false)
+        expect(errors).toEqual({
+            make: 'Make is required',
+            quantity: 'Quantity cannot be negative',
+        })
+    })
+
+    it('requires at least one updatable field', () => {
+        const { isValid, errors } = validateVehicleUpdateInput({ color: 'red' })
+
+        expect(isValid).toBe(false)
+        expect(errors.body).toBe('Provide at least one field to update')
     })
 })
