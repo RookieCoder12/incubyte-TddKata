@@ -35,3 +35,13 @@ export async function purchaseVehicle(vehicleId) {
 
     return formatVehicle(vehicle)
 }
+
+// Prisma throws error code P2025 if the vehicle does not exist
+export async function restockVehicle(vehicleId, quantity) {
+    const vehicle = await prisma.vehicle.update({
+        where: { id: vehicleId },
+        data: { quantity: { increment: quantity } },
+    })
+
+    return formatVehicle(vehicle)
+}
