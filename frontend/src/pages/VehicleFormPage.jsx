@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { fetchVehicles, createVehicle, updateVehicle } from '../api/vehicles.js'
+import { fetchVehicles, createVehicle, updateVehicle, deleteVehicle } from '../api/vehicles.js'
 import { validateVehicleForm } from '../utils/validation.js'
 import AppShell from '../components/AppShell.jsx'
 import FormSection from '../components/FormSection.jsx'
 import TextField from '../components/TextField.jsx'
 import Button from '../components/Button.jsx'
+import DeleteVehicleSection from '../components/DeleteVehicleSection.jsx'
 
 const EMPTY_FORM = { make: '', model: '', category: '', price: '', quantity: '' }
 
@@ -153,6 +154,16 @@ export default function VehicleFormPage() {
               </div>
             </FormSection>
           </form>
+        )}
+
+        {isEditing && vehicle && (
+          <DeleteVehicleSection
+            vehicle={vehicle}
+            onDelete={async () => {
+              await deleteVehicle(token, id)
+              navigate('/')
+            }}
+          />
         )}
       </div>
     </AppShell>
