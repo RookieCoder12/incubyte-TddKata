@@ -53,3 +53,51 @@ describe('POST /api/auth/register', () => {
         expect(res.body.message).toBe('Email is already registered')
     })
 })
+
+describe('POST /api/auth/login', () => {
+    const credentials = { email: 'asha@example.com', password: 'secret123' }
+
+    beforeEach(async () => {
+        await request(app).post('/api/auth/register').send({ name: 'Asha', ...credentials })
+    })
+
+    it('returns a token and the user for valid credentials', async () => {
+        const res = await request(app).post('/api/auth/login').send(credentials)
+
+        expect(res.status).toBe(200)
+        expect(res.body.token).toEqual(expect.any(String))
+        expect(res.body.user.email).toBe(credentials.email)
+    })
+
+    it('treats the email as case-insensitive', async () => {
+        const res = await request(app)
+            .post('/api/auth/login')
+            .send({ ...credentials, email: 'ASHA@example.com' })
+
+        expect(res.status).toBe(200)
+    })
+
+    it('returns 401 for a wrong password', async () => {
+        const res = await request(app)
+            .post('/api/auth/login')
+            .send({ ...credentials, password: 'wrong-password' })
+
+        expect(res.status).toBe(401)
+        expect(res.body.message).toBe('Invalid email or password')
+    })
+
+    it('returns 401 for an unknown email', async () => {
+        const res = await request(app)
+            .post('/api/auth/login')
+            .send({ ...credentials, email: 'nobody@example.com' })
+
+        expect(res.status).toBe(401)
+        expect(res.body.message).toBe('Invalid email or password')
+    })
+
+    it('returns 400 when fields are missing', async () => {
+        const res = await request(app).post('/api/auth/login').send({})
+
+        expect(res.status).toBe(400)
+    })
+})

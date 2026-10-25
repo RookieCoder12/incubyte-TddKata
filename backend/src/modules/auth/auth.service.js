@@ -48,3 +48,23 @@ export async function registerUser({ name, email, password }) {
         user: toPublicUser(user),
     }
 }
+
+export async function loginUser({ email, password }) {
+    const user = await prisma.user.findUnique({
+        where: { email: email.trim().toLowerCase() },
+    })
+
+    // Same error for unknown email and wrong password, so we don't reveal which emails exist
+    const passwordMatches = user && await bcrypt.compare(password, user.passwordHash)
+
+    if (!passwordMatches) {
+        const error = new Error('Invalid email or password')
+        error.code = 'INVALID_CREDENTIALS'
+        throw error
+    }
+
+    return {
+        token: createToken(user),
+        user: toPublicUser(user),
+    }
+}
