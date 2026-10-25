@@ -20,3 +20,23 @@ export function validateRegisterForm({ name, email, password }) {
 
   return errors
 }
+
+export function validateVehicleForm({ make, model, category, price, quantity }) {
+  const errors = {}
+
+  if (!make.trim()) errors.make = 'Make is required'
+  if (!model.trim()) errors.model = 'Model is required'
+  if (!category.trim()) errors.category = 'Category is required'
+
+  if (price === '') {
+    errors.price = 'Price is required'
+  } else if (!(Number(price) > 0)) {
+    errors.price = 'Price must be greater than 0'
+  }
+
+  if (quantity === '' || !Number.isInteger(Number(quantity)) || Number(quantity) < 0) {
+    errors.quantity = 'Units must be a whole number, 0 or more'
+  }
+
+  return errors
+}
