@@ -19,6 +19,9 @@
     "collectCoverageFrom": [
       "src/**/*.js",
       "!src/server.js"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.js"
     ]
   },
   "dependencies": {
@@ -27,9 +30,7 @@
     "cors": "^2.8.6",
     "dotenv": "^18.0.9",
     "express": "^5.3.0",
-    "helmet": "^8.3.0",
-    "jsonwebtoken": "^9.0.3",
-    "zod": "^4.6.7"
+    "jsonwebtoken": "^9.0.3"
   },
   "devDependencies": {
     "dotenv-cli": "^11.0.0",
