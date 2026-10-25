@@ -1,7 +1,7 @@
 import express from 'express'
-import { authenticate } from '../../middleware/auth.middleware.js'
-import { validateVehicleInput, validateSearchQuery } from './vehicles.validation.js'
-import { createVehicle, getAllVehicles, searchVehicles } from './vehicles.service.js'
+import { authenticate, requireAdmin } from '../../middleware/auth.middleware.js'
+import { validateVehicleInput, validateSearchQuery, validateVehicleUpdateInput } from './vehicles.validation.js'
+import { createVehicle, getAllVehicles, searchVehicles, updateVehicle, deleteVehicle } from './vehicles.service.js'
 
 const router = express.Router()
 
@@ -48,6 +48,40 @@ router.get('/search', async (req, res) => {
     } catch (error) {
         console.error(error)
         return res.status(500).json({ message: 'Unable to search vehicles' })
+    }
+})
+
+router.put('/:id', async (req, res) => {
+    const { isValid, errors } = validateVehicleUpdateInput(req.body)
+
+    if (!isValid) {
+        return res.status(400).json({ errors })
+    }
+
+    try {
+        const vehicle = await updateVehicle(req.params.id, req.body)
+        return res.status(200).json(vehicle)
+    } catch (error) {
+        if (error?.code === 'P2025') {
+            return res.status(404).json({ message: 'Vehicle not found' })
+        }
+
+        console.error(error)
+        return res.status(500).json({ message: 'Unable to update vehicle' })
+    }
+})
+
+router.delete('/:id', requireAdmin, async (req, res) => {
+    try {
+        await deleteVehicle(req.params.id)
+        return res.status(204).send()
+    } catch (error) {
+        if (error?.code === 'P2025') {
+            return res.status(404).json({ message: 'Vehicle not found' })
+        }
+
+        console.error(error)
+        return res.status(500).json({ message: 'Unable to delete vehicle' })
     }
 })
 

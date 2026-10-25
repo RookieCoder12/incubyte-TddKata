@@ -51,3 +51,28 @@ export async function searchVehicles({ make, model, category, minPrice, maxPrice
 
     return vehicles.map(formatVehicle)
 }
+
+// Prisma throws error code P2025 if the vehicle does not exist
+export async function updateVehicle(vehicleId, data) {
+    const allowedFields = ['make', 'model', 'category', 'price', 'quantity']
+    const changes = {}
+
+    for (const field of allowedFields) {
+        if (data[field] !== undefined) {
+            changes[field] = typeof data[field] === 'string' ? data[field].trim() : data[field]
+        }
+    }
+
+    const vehicle = await prisma.vehicle.update({
+        where: { id: vehicleId },
+        data: changes,
+    })
+
+    return formatVehicle(vehicle)
+}
+
+export async function deleteVehicle(vehicleId) {
+    await prisma.vehicle.delete({
+        where: { id: vehicleId },
+    })
+}

@@ -44,6 +44,15 @@ function validateQuantity(quantity) {
   return null
 }
 
+// One validator per updatable field
+const FIELD_VALIDATORS = {
+  make: (value) => validateText(value, 'Make'),
+  model: (value) => validateText(value, 'Model'),
+  category: (value) => validateText(value, 'Category'),
+  price: validatePrice,
+  quantity: validateQuantity,
+}
+
 export function validateVehicleInput(data) {
   const errors = {}
 
@@ -62,6 +71,28 @@ export function validateVehicleInput(data) {
   const quantityError = validateQuantity(data?.quantity)
   if (quantityError) {
     errors.quantity = quantityError
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
+  }
+}
+
+// Partial update: only the fields that were sent are checked
+export function validateVehicleUpdateInput(data) {
+  const errors = {}
+  const fieldsToUpdate = Object.keys(FIELD_VALIDATORS).filter((field) => data?.[field] !== undefined)
+
+  if (fieldsToUpdate.length === 0) {
+    errors.body = 'Provide at least one field to update'
+  }
+
+  for (const field of fieldsToUpdate) {
+    const fieldError = FIELD_VALIDATORS[field](data[field])
+    if (fieldError) {
+      errors[field] = fieldError
+    }
   }
 
   return {
