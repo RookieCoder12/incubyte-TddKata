@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { fetchVehicles } from '../api/vehicles.js'
+import { fetchVehicles, searchVehicles } from '../api/vehicles.js'
 import { summarizeStock, filterByStock, sortVehicles } from '../utils/inventory.js'
 import AppShell from '../components/AppShell.jsx'
 import StockCountCards from '../components/StockCountCards.jsx'
 import VehicleTable from '../components/VehicleTable.jsx'
+import FilterBar, { EMPTY_FILTERS, hasActiveFilters, getPriceRangeError } from '../components/FilterBar.jsx'
 import { PlusIcon } from '../components/Icons.jsx'
 
 function pluralize(count, word) {
@@ -18,11 +19,20 @@ export default function InventoryPage() {
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
   const [stockFilter, setStockFilter] = useState('all')
+  const [filters, setFilters] = useState(EMPTY_FILTERS)
+  const [categories, setCategories] = useState([])
 
-  const loadVehicles = useCallback(async () => {
+  // No filters: the full list (which also gives the category options); otherwise the search endpoint
+  const loadVehicles = useCallback(async (activeFilters) => {
     setStatus('loading')
     try {
-      setVehicles(sortVehicles(await fetchVehicles(token)))
+      if (hasActiveFilters(activeFilters)) {
+        setVehicles(sortVehicles(await searchVehicles(token, activeFilters)))
+      } else {
+        const allVehicles = await fetchVehicles(token)
+        setVehicles(sortVehicles(allVehicles))
+        setCategories([...new Set(allVehicles.map((vehicle) => vehicle.category))].sort())
+      }
       setStatus('ready')
     } catch (err) {
       setError(err.message)
@@ -30,9 +40,14 @@ export default function InventoryPage() {
     }
   }, [token])
 
+  // Wait until typing stops before searching; skip an impossible price range
   useEffect(() => {
-    loadVehicles()
-  }, [loadVehicles])
+    if (getPriceRangeError(filters)) {
+      return undefined
+    }
+    const timer = setTimeout(() => loadVehicles(filters), hasActiveFilters(filters) ? 300 : 0)
+    return () => clearTimeout(timer)
+  }, [filters, loadVehicles])
 
   const summary = summarizeStock(vehicles)
   const visibleVehicles = filterByStock(vehicles, stockFilter)
@@ -43,9 +58,11 @@ export default function InventoryPage() {
         <div>
           <h1 className="text-[22px] leading-7 font-semibold">Inventory</h1>
           <p className="mt-1 text-sm text-muted">
-            {status === 'ready'
-              ? `${pluralize(summary['sold-out'], 'model')} sold out · ${pluralize(summary.units, 'unit')} on the lot`
-              : 'Loading the lot…'}
+            {status !== 'ready' && 'Loading the lot…'}
+            {status === 'ready' && !hasActiveFilters(filters) &&
+              `${pluralize(summary['sold-out'], 'model')} sold out · ${pluralize(summary.units, 'unit')} on the lot`}
+            {status === 'ready' && hasActiveFilters(filters) &&
+              `${pluralize(summary.all, 'model')} match · ${pluralize(summary.units, 'unit')} on the lot`}
           </p>
         </div>
         {isAdmin && (
@@ -63,12 +80,16 @@ export default function InventoryPage() {
       </div>
 
       <div className="mt-6">
+        <FilterBar filters={filters} categories={categories} onChange={setFilters} onClear={() => setFilters(EMPTY_FILTERS)} />
+      </div>
+
+      <div className="mt-4">
         <VehicleTable
           vehicles={visibleVehicles}
           status={status}
           error={error}
-          onRetry={loadVehicles}
-          emptyMessage={vehicles.length === 0 ? 'No vehicles on the lot yet.' : 'No vehicles in this stock group.'}
+          onRetry={() => loadVehicles(filters)}
+          emptyMessage={hasActiveFilters(filters) ? 'No vehicles match these filters.' : vehicles.length === 0 ? 'No vehicles on the lot yet.' : 'No vehicles in this stock group.'}
         />
       </div>
     </AppShell>
