@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/*
+  Design tokens from the taste-skill "framed-sheet" style (seed 510599991).
+  The frame is tinted a cool asphalt grey (#f3f6f8), the product's face.
+*/
+@theme {
+  --font-sans: "IBM Plex Sans", Inter, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-ground: #f3f6f8;
+  --color-surface: #ffffff;
+  --color-raised: #f4f6f8;
+  --color-active: #e6eaed;
+  --color-border: #e8eaec;
+  --color-rule: #f0f1f2;
+  --color-control: #cdced1;
+  --color-ink: #131416;
+  --color-muted: #5d5f60;
+  --color-primary: #1d1f20;
+  --color-accent: #1b6c80;
+  --color-accent-pale: #e8f2f4;
+  --color-positive: #1e7b4f;
+  --color-negative: #c4242a;
+  --color-pill-positive-bg: #dcfae5;
+  --color-pill-positive-ink: #04250e;
+  --color-pill-negative-bg: #ffedea;
+  --color-pill-negative-ink: #831c1e;
+  --color-pill-warning-bg: #fffbeb;
+  --color-pill-warning-ink: #92400e;
+  --color-pill-neutral-bg: #ebedee;
+  --color-pill-neutral-ink: #353736;
+
+  --radius-card: 8px;
+  --radius-control: 6px;
+  --radius-sheet: 16px;
+}
+
+body {
+  background: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
