@@ -1,0 +1,17 @@
+# Local PostgreSQL for development and tests.
+# Creates two databases: dealership (dev) and dealership_test (test suite).
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dealership-postgres
+    environment:
+      POSTGRES_USER: dealership
+      POSTGRES_PASSWORD: dealership
+      POSTGRES_DB: dealership
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-test-db.sql:/docker-entrypoint-initdb.d/init-test-db.sql
+volumes:
+  pgdata:
