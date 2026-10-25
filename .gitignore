@@ -4,3 +4,7 @@ coverage/
 dist/
 .DS_Store
 *.log
+
+# Local AI tooling (taste-skill and its working files)
+.claude/
+.taste-skill/
