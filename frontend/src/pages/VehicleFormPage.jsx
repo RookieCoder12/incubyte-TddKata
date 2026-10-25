@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { fetchVehicles, createVehicle, updateVehicle } from '../api/vehicles.js'
+import { fetchVehicles, createVehicle, updateVehicle, deleteVehicle } from '../api/vehicles.js'
 import { validateVehicleForm } from '../utils/validation.js'
+import { formatPrice } from '../utils/inventory.js'
 import AppShell from '../components/AppShell.jsx'
 import FormSection from '../components/FormSection.jsx'
 import TextField from '../components/TextField.jsx'
 import Button from '../components/Button.jsx'
+import DeleteVehicleSection from '../components/DeleteVehicleSection.jsx'
 
 const EMPTY_FORM = { make: '', model: '', category: '', price: '', quantity: '' }
 
@@ -140,7 +142,11 @@ export default function VehicleFormPage() {
               </div>
             </FormSection>
 
-            <FormSection title="Price and stock" description="The sticker price, and how many units are on the lot right now.">
+            <FormSection
+              title="Price and stock"
+              description="The sticker price, and how many units are on the lot right now."
+              aside={vehicle ? `Listed at ${formatPrice(vehicle.price)} · ${vehicle.quantity} on the lot` : undefined}
+            >
               <div className="grid gap-4 sm:grid-cols-2">
                 <TextField label="Price (USD)" name="price" type="number" min="0" step="0.01" inputMode="decimal" value={form.price} onChange={handleChange} error={fieldErrors.price} placeholder="24500" disabled={loadingVehicle} />
                 <TextField label="Units on the lot" name="quantity" type="number" min="0" step="1" inputMode="numeric" value={form.quantity} onChange={handleChange} error={fieldErrors.quantity} placeholder="3" disabled={loadingVehicle} />
@@ -153,6 +159,16 @@ export default function VehicleFormPage() {
               </div>
             </FormSection>
           </form>
+        )}
+
+        {isEditing && vehicle && (
+          <DeleteVehicleSection
+            vehicle={vehicle}
+            onDelete={async () => {
+              await deleteVehicle(token, id)
+              navigate('/')
+            }}
+          />
         )}
       </div>
     </AppShell>
