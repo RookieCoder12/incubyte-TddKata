@@ -29,3 +29,25 @@ export async function getAllVehicles() {
 
     return vehicles.map(formatVehicle)
 }
+
+export async function searchVehicles({ make, model, category, minPrice, maxPrice }) {
+    const where = {}
+
+    // Text filters: partial, case-insensitive match (e.g. "toy" finds "Toyota")
+    if (make) where.make = { contains: make, mode: 'insensitive' }
+    if (model) where.model = { contains: model, mode: 'insensitive' }
+    if (category) where.category = { contains: category, mode: 'insensitive' }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+        where.price = {}
+        if (minPrice !== undefined) where.price.gte = Number(minPrice)
+        if (maxPrice !== undefined) where.price.lte = Number(maxPrice)
+    }
+
+    const vehicles = await prisma.vehicle.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+    })
+
+    return vehicles.map(formatVehicle)
+}
