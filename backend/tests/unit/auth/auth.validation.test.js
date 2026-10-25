@@ -1,4 +1,4 @@
-import { validateRegisterInput } from '../../../src/modules/auth/auth.validation.js'
+import { validateRegisterInput, validateLoginInput } from '../../../src/modules/auth/auth.validation.js'
 
 describe('validateRegisterInput', () => {
     const validInput = { name: 'Asha', email: 'asha@example.com', password: 'secret123' }
@@ -33,6 +33,24 @@ describe('validateRegisterInput', () => {
 
         expect(errors).toEqual({
             name: 'Name is required',
+            email: 'Email is required',
+            password: 'Password is required',
+        })
+    })
+})
+
+describe('validateLoginInput', () => {
+    it('accepts an email and password', () => {
+        const result = validateLoginInput({ email: 'asha@example.com', password: 'secret123' })
+
+        expect(result).toEqual({ isValid: true, errors: {} })
+    })
+
+    it('requires email and password', () => {
+        const { isValid, errors } = validateLoginInput({})
+
+        expect(isValid).toBe(false)
+        expect(errors).toEqual({
             email: 'Email is required',
             password: 'Password is required',
         })
