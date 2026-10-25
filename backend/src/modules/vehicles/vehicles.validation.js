@@ -1,5 +1,3 @@
-const TEXT_FIELDS = { make: 'Make', model: 'Model', category: 'Category' }
-
 function validateText(value, label) {
   if (typeof value !== 'string' || !value.trim()) {
     return `${label} is required`
@@ -56,21 +54,11 @@ const FIELD_VALIDATORS = {
 export function validateVehicleInput(data) {
   const errors = {}
 
-  for (const [field, label] of Object.entries(TEXT_FIELDS)) {
-    const textError = validateText(data?.[field], label)
-    if (textError) {
-      errors[field] = textError
+  for (const [field, validate] of Object.entries(FIELD_VALIDATORS)) {
+    const fieldError = validate(data?.[field])
+    if (fieldError) {
+      errors[field] = fieldError
     }
-  }
-
-  const priceError = validatePrice(data?.price)
-  if (priceError) {
-    errors.price = priceError
-  }
-
-  const quantityError = validateQuantity(data?.quantity)
-  if (quantityError) {
-    errors.quantity = quantityError
   }
 
   return {
