@@ -62,3 +62,50 @@ describe('POST /api/vehicles/:id/purchase', () => {
         expect(res.status).toBe(401)
     })
 })
+
+describe('POST /api/vehicles/:id/restock', () => {
+    let adminToken
+
+    beforeEach(async () => {
+        ;({ token: adminToken } = await createUserWithToken('ADMIN'))
+    })
+
+    function restock(vehicleId, body, token = adminToken) {
+        return request(app)
+            .post(`/api/vehicles/${vehicleId}/restock`)
+            .set('Authorization', `Bearer ${token}`)
+            .send(body)
+    }
+
+    it('increases the quantity by the given amount', async () => {
+        const vehicle = await prisma.vehicle.create({ data: { ...corolla, quantity: 0 } })
+
+        const res = await restock(vehicle.id, { quantity: 4 })
+
+        expect(res.status).toBe(200)
+        expect(res.body).toMatchObject({ id: vehicle.id, quantity: 4 })
+    })
+
+    it('returns 400 for an invalid quantity', async () => {
+        const vehicle = await prisma.vehicle.create({ data: corolla })
+
+        const res = await restock(vehicle.id, { quantity: -1 })
+
+        expect(res.status).toBe(400)
+        expect(res.body.errors.quantity).toBe('Quantity must be greater than 0')
+    })
+
+    it('returns 403 for a non-admin user', async () => {
+        const vehicle = await prisma.vehicle.create({ data: corolla })
+
+        const res = await restock(vehicle.id, { quantity: 2 }, userToken)
+
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 404 for an unknown vehicle', async () => {
+        const res = await restock('does-not-exist', { quantity: 2 })
+
+        expect(res.status).toBe(404)
+    })
+})
