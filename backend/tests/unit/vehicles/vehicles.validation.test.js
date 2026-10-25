@@ -1,4 +1,4 @@
-import { validateVehicleInput } from '../../../src/modules/vehicles/vehicles.validation.js'
+import { validateVehicleInput, validateSearchQuery } from '../../../src/modules/vehicles/vehicles.validation.js'
 
 describe('validateVehicleInput', () => {
     const validVehicle = { make: 'Toyota', model: 'Corolla', category: 'Sedan', price: 20000, quantity: 3 }
@@ -36,5 +36,30 @@ describe('validateVehicleInput', () => {
 
     it('allows a quantity of zero', () => {
         expect(validateVehicleInput({ ...validVehicle, quantity: 0 }).isValid).toBe(true)
+    })
+})
+
+describe('validateSearchQuery', () => {
+    it('accepts an empty query', () => {
+        expect(validateSearchQuery({})).toEqual({ isValid: true, errors: {} })
+    })
+
+    it('accepts numeric price strings from the query string', () => {
+        expect(validateSearchQuery({ minPrice: '1000', maxPrice: '5000' }).isValid).toBe(true)
+    })
+
+    it('rejects prices that are not numbers or are negative', () => {
+        const { errors } = validateSearchQuery({ minPrice: 'abc', maxPrice: '-1' })
+
+        expect(errors).toEqual({
+            minPrice: 'Min price must be a non-negative number',
+            maxPrice: 'Max price must be a non-negative number',
+        })
+    })
+
+    it('rejects a min price greater than the max price', () => {
+        const { errors } = validateSearchQuery({ minPrice: '5000', maxPrice: '1000' })
+
+        expect(errors.minPrice).toBe('Min price cannot be greater than max price')
     })
 })
