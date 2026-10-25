@@ -90,6 +90,12 @@ describe('VehicleFormPage — edit', () => {
     expect(screen.getByLabelText('Price (USD)')).toHaveValue(23950)
   })
 
+  it('summarises the current listing beside the price fields', async () => {
+    renderEdit()
+
+    expect(await screen.findByText('Listed at $23,950.00 · 2 on the lot')).toBeInTheDocument()
+  })
+
   it('saves the changes and returns to the inventory', async () => {
     updateVehicle.mockResolvedValue({})
     renderEdit()
