@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import authRoutes from './modules/auth/auth.routes.js'
+import vehicleRoutes from './modules/vehicles/vehicles.routes.js'
 
 // Builds the Express app without starting a server, so tests can use it directly
 export function createApp() {
@@ -14,6 +15,7 @@ export function createApp() {
     })
 
     app.use('/api/auth', authRoutes)
+    app.use('/api/vehicles', vehicleRoutes)
 
     return app
 }
