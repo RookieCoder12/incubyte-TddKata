@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { fetchVehicles, searchVehicles, purchaseVehicle } from '../api/vehicles.js'
+import { fetchVehicles, searchVehicles, purchaseVehicle, restockVehicle } from '../api/vehicles.js'
 import { summarizeStock, filterByStock, sortVehicles } from '../utils/inventory.js'
 import AppShell from '../components/AppShell.jsx'
 import StockCountCards from '../components/StockCountCards.jsx'
 import VehicleTable from '../components/VehicleTable.jsx'
 import FilterBar, { EMPTY_FILTERS, hasActiveFilters, getPriceRangeError } from '../components/FilterBar.jsx'
 import Toast from '../components/Toast.jsx'
+import RestockDialog from '../components/RestockDialog.jsx'
+import Button from '../components/Button.jsx'
 import { PlusIcon } from '../components/Icons.jsx'
 
 function pluralize(count, word) {
@@ -23,6 +25,7 @@ export default function InventoryPage() {
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [categories, setCategories] = useState([])
   const [purchasingId, setPurchasingId] = useState(null)
+  const [restocking, setRestocking] = useState(null)
   const [toast, setToast] = useState({ message: '', tone: 'neutral' })
   const dismissToast = useCallback(() => setToast({ message: '', tone: 'neutral' }), [])
 
@@ -76,6 +79,32 @@ export default function InventoryPage() {
     return () => clearTimeout(timer)
   }, [filters, loadVehicles])
 
+  async function handleRestock(vehicle, quantity) {
+    const updated = await restockVehicle(token, vehicle.id, quantity)
+    replaceVehicle(updated)
+    setRestocking(null)
+    setToast({ message: `Restocked ${vehicle.make} ${vehicle.model} · ${updated.quantity} on the lot`, tone: 'neutral' })
+  }
+
+  // Restock and Edit sit before Purchase on every row, for admins only
+  function renderAdminActions(vehicle) {
+    const name = `${vehicle.make} ${vehicle.model}`
+    return (
+      <>
+        <Button variant="ghost" size="sm" aria-label={`Restock ${name}`} onClick={() => setRestocking(vehicle)}>
+          Restock
+        </Button>
+        <Link
+          to={`/vehicles/${vehicle.id}/edit`}
+          aria-label={`Edit ${name}`}
+          className="inline-flex h-8 items-center rounded-control px-3 text-sm font-medium text-ink hover:bg-raised"
+        >
+          Edit
+        </Link>
+      </>
+    )
+  }
+
   const summary = summarizeStock(vehicles)
   const visibleVehicles = filterByStock(vehicles, stockFilter)
 
@@ -118,9 +147,14 @@ export default function InventoryPage() {
           onRetry={() => loadVehicles(filters)}
           onPurchase={handlePurchase}
           purchasingId={purchasingId}
+          renderAdminActions={isAdmin ? renderAdminActions : undefined}
           emptyMessage={hasActiveFilters(filters) ? 'No vehicles match these filters.' : vehicles.length === 0 ? 'No vehicles on the lot yet.' : 'No vehicles in this stock group.'}
         />
       </div>
+
+      {restocking && (
+        <RestockDialog vehicle={restocking} onRestock={handleRestock} onClose={() => setRestocking(null)} />
+      )}
 
       <Toast message={toast.message} tone={toast.tone} onDismiss={dismissToast} />
     </AppShell>
