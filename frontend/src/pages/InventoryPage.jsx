@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
-import { fetchVehicles, searchVehicles } from '../api/vehicles.js'
+import { fetchVehicles, searchVehicles, purchaseVehicle } from '../api/vehicles.js'
 import { summarizeStock, filterByStock, sortVehicles } from '../utils/inventory.js'
 import AppShell from '../components/AppShell.jsx'
 import StockCountCards from '../components/StockCountCards.jsx'
 import VehicleTable from '../components/VehicleTable.jsx'
 import FilterBar, { EMPTY_FILTERS, hasActiveFilters, getPriceRangeError } from '../components/FilterBar.jsx'
+import Toast from '../components/Toast.jsx'
 import { PlusIcon } from '../components/Icons.jsx'
 
 function pluralize(count, word) {
@@ -21,6 +22,32 @@ export default function InventoryPage() {
   const [stockFilter, setStockFilter] = useState('all')
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [categories, setCategories] = useState([])
+  const [purchasingId, setPurchasingId] = useState(null)
+  const [toast, setToast] = useState({ message: '', tone: 'neutral' })
+  const dismissToast = useCallback(() => setToast({ message: '', tone: 'neutral' }), [])
+
+  function replaceVehicle(updated) {
+    setVehicles((current) => current.map((vehicle) => (vehicle.id === updated.id ? updated : vehicle)))
+  }
+
+  async function handlePurchase(vehicle) {
+    const name = `${vehicle.make} ${vehicle.model}`
+    setPurchasingId(vehicle.id)
+    try {
+      const updated = await purchaseVehicle(token, vehicle.id)
+      replaceVehicle(updated)
+      const left = updated.quantity === 0 ? 'none' : updated.quantity
+      setToast({ message: `Sold 1 ${name} · ${left} left on the lot`, tone: 'neutral' })
+    } catch (err) {
+      // Someone else sold the last unit first: show it as sold out
+      if (err.status === 400) {
+        replaceVehicle({ ...vehicle, quantity: 0 })
+      }
+      setToast({ message: err.message, tone: 'error' })
+    } finally {
+      setPurchasingId(null)
+    }
+  }
 
   // No filters: the full list (which also gives the category options); otherwise the search endpoint
   const loadVehicles = useCallback(async (activeFilters) => {
@@ -89,9 +116,13 @@ export default function InventoryPage() {
           status={status}
           error={error}
           onRetry={() => loadVehicles(filters)}
+          onPurchase={handlePurchase}
+          purchasingId={purchasingId}
           emptyMessage={hasActiveFilters(filters) ? 'No vehicles match these filters.' : vehicles.length === 0 ? 'No vehicles on the lot yet.' : 'No vehicles in this stock group.'}
         />
       </div>
+
+      <Toast message={toast.message} tone={toast.tone} onDismiss={dismissToast} />
     </AppShell>
   )
 }
