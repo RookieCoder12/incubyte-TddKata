@@ -128,3 +128,72 @@ describe('GET /api/vehicles/search', () => {
         expect(res.status).toBe(401)
     })
 })
+
+describe('PUT /api/vehicles/:id', () => {
+    it('updates the given fields and keeps the rest', async () => {
+        const vehicle = await prisma.vehicle.create({ data: corolla })
+
+        const res = await request(app)
+            .put(`/api/vehicles/${vehicle.id}`)
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({ price: 18500, quantity: 5 })
+
+        expect(res.status).toBe(200)
+        expect(res.body).toMatchObject({ ...corolla, price: 18500, quantity: 5 })
+    })
+
+    it('returns 400 for invalid fields', async () => {
+        const vehicle = await prisma.vehicle.create({ data: corolla })
+
+        const res = await request(app)
+            .put(`/api/vehicles/${vehicle.id}`)
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({ price: 'free' })
+
+        expect(res.status).toBe(400)
+    })
+
+    it('returns 404 for an unknown vehicle', async () => {
+        const res = await request(app)
+            .put('/api/vehicles/does-not-exist')
+            .set('Authorization', `Bearer ${userToken}`)
+            .send({ price: 1000 })
+
+        expect(res.status).toBe(404)
+        expect(res.body.message).toBe('Vehicle not found')
+    })
+})
+
+describe('DELETE /api/vehicles/:id', () => {
+    it('lets an admin delete a vehicle', async () => {
+        const { token: adminToken } = await createUserWithToken('ADMIN')
+        const vehicle = await prisma.vehicle.create({ data: corolla })
+
+        const res = await request(app)
+            .delete(`/api/vehicles/${vehicle.id}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+
+        expect(res.status).toBe(204)
+        expect(await prisma.vehicle.findUnique({ where: { id: vehicle.id } })).toBeNull()
+    })
+
+    it('returns 403 for a non-admin user', async () => {
+        const vehicle = await prisma.vehicle.create({ data: corolla })
+
+        const res = await request(app)
+            .delete(`/api/vehicles/${vehicle.id}`)
+            .set('Authorization', `Bearer ${userToken}`)
+
+        expect(res.status).toBe(403)
+    })
+
+    it('returns 404 for an unknown vehicle', async () => {
+        const { token: adminToken } = await createUserWithToken('ADMIN')
+
+        const res = await request(app)
+            .delete('/api/vehicles/does-not-exist')
+            .set('Authorization', `Bearer ${adminToken}`)
+
+        expect(res.status).toBe(404)
+    })
+})
